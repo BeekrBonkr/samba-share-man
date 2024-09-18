@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>CNALX Login</title>
+    <HTA:APPLICATION 
+      APPLICATIONNAME="CNALX Login"
+      BORDER="dialog"
+      CAPTION="yes"
+      INNERBORDER="yes"
+      SCROLL="no"
+      SINGLEINSTANCE="yes"
+      WINDOWSTATE="normal"
+      SHOWINTASKBAR="yes"
+      ICON=""
+      MAXIMIZEBUTTON="no"
+      MINIMIZEBUTTON="no"
+      >
+</head>
+
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+    }
+
+    h2 {
+        color: #333;
+        text-align: center;
+    }
+
+    #loginForm {
+        width: 300px;
+        margin: 0 auto;
+    }
+
+    .input-field {
+        margin-bottom: 10px;
+    }
+
+    .input-field label {
+        display: block;
+        font-weight: bold;
+        margin-bottom: 5px;
+    }
+
+    .input-field input {
+        width: 100%;
+        padding: 8px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        box-sizing: border-box;
+    }
+
+    .btn-login {
+        width: 100%;
+        padding: 10px;
+        background-color: #007bff;
+        color: #fff;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 16px;
+    }
+
+    .btn-login:hover {
+        background-color: #0056b3;
+    }
+</style>
+
+<script language="VBScript">
+Option Explicit
+
+Sub SubmitForm()
+    On Error Resume Next ' Enable error handling
+
+    Dim objShell, objNetwork, strUser, strPassword, strServerAddress, strDriveLetter, iRetVal
+
+    ' Specify the drive letter to use for the network connection
+    strDriveLetter = "Z:"
+    strServerAddress = document.getElementById("serverAddress").value
+
+    ' Disconnect any existing SMB connections to the same server address
+    Set objShell = CreateObject("WScript.Shell")
+    objShell.Run "cmd /c net use " & strDriveLetter & " /delete /y", 0, True
+    objShell.Run "cmd /c net use \\" & strServerAddress & " /delete /y", 0, True
+    If Err.Number <> 0 Then
+        MsgBox "Failed to disconnect existing network connections: " & Err.Description
+        Err.Clear
+        Exit Sub
+    End If
+
+    ' Ask for username and password
+    strUser = document.getElementById("username").value
+    strPassword = document.getElementById("password").value
+
+    ' Create a network object
+    Set objNetwork = CreateObject("WScript.Network")
+
+    ' Attempt to map the network drive with the provided credentials
+    objNetwork.MapNetworkDrive strDriveLetter, "\\" & strServerAddress & "\" & strUser, False, strUser, strPassword
+    If Err.Number <> 0 Then
+        MsgBox "Failed to connect to server. Check server address, username, and password. Error: " & Err.Description
+        Err.Clear
+        Set objNetwork = Nothing
+        Set objShell = Nothing
+        Exit Sub
+    End If
+
+    ' Open the file explorer window on the newly mapped drive
+    objShell.Run "explorer.exe " & strDriveLetter
+    If Err.Number <> 0 Then
+        MsgBox "Failed to open Explorer: " & Err.Description
+        Err.Clear
+    End If
+
+    Set objNetwork = Nothing
+    Set objShell = Nothing
+    window.close()
+End Sub
+
+</script>
+
+
+
+<body>
+    <h2>CNALX Login</h2>
+    <form id="loginForm">
+        <div class="input-field">
+            <label for="serverAddress">Server Address:</label>
+            <input type="text" id="serverAddress" value="192.168.1.205">
+        </div>
+        <div class="input-field">
+            <label for="username">Username:</label>
+            <input type="text" id="username">
+        </div>
+        <div class="input-field">
+            <label for="password">Password:</label>
+            <input type="password" id="password">
+        </div>
+        <input type="button" class="btn-login" value="Login" onclick="SubmitForm()">
+    </form>
+</body>
+</html>
